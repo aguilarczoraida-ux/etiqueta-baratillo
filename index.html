@@ -182,7 +182,7 @@
     document.getElementById('precioProducto').textContent = 'S/ ' + parseFloat(precio).toFixed(2);
 
     // Generar barcode con el SKU
-    JsBarcode('#barcode', sku, {
+    JsBarcode('#barcode', id, {
       format:      'CODE128',
       lineColor:   '#000',
       width:       1.2,
