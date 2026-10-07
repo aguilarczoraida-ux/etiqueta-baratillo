@@ -34,7 +34,7 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
       overflow: hidden;
     }
-    
+
     /* Solo en pantalla: se ve más grande para revisar */
     @media screen {
       .etiqueta { zoom: 2.2; }
@@ -166,13 +166,13 @@
   <script>
     // Costo codificado: 21.51 -> C21P51
     function codigoCosto(cc) {
-  let s = String(cc).replace(/[^0-9.,]/g, '');   // quita letras como la "C"
-  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
-  const n = parseFloat(s);
-  if (isNaN(n)) return '';
-  const partes = n.toFixed(2).split('.');
-  return 'C' + partes[0] + 'P' + partes[1];
-}
+      let s = String(cc).replace(/[^0-9.,]/g, '');   // quita letras como la "C"
+      if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+      const n = parseFloat(s);
+      if (isNaN(n)) return '';
+      const partes = n.toFixed(2).split('.');
+      return 'C' + partes[0] + 'P' + partes[1];
+    }
 
     // Reduce la letra del nombre hasta que quepa completo
     function ajustarNombre() {
@@ -238,6 +238,14 @@
       }
     } else {
       svg.style.display = 'none';
+    }
+
+    // Abrir el cuadro de impresión automáticamente (agrega &auto=0 a la URL para desactivarlo)
+    if (params.get('auto') !== '0') {
+      window.addEventListener('load', function () {
+        ajustarNombre();
+        setTimeout(function () { window.print(); }, 400);
+      });
     }
   </script>
 
