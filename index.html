@@ -20,69 +20,73 @@
       padding: 20px;
     }
 
-    /* Etiqueta exacta 50mm x 30mm a 96dpi */
+    /* Etiqueta exacta 50mm x 30mm (todo en mm para que pantalla e impresión sean iguales) */
     .etiqueta {
-      width: 188px;   /* 50mm */
-      height: 113px;  /* 30mm */
+      width: 50mm;
+      height: 30mm;
       background: white;
       border: 1px solid #ccc;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: space-between;
-      padding: 3px 4px 2px 4px;
+      padding: 1mm 1.5mm;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
       overflow: hidden;
     }
 
-    .empresa {
-      font-size: 6.5px;
-      font-weight: bold;
-      letter-spacing: 0.5px;
-      color: #333;
-      text-align: center;
-      text-transform: uppercase;
+    /* Solo en pantalla: se ve más grande para revisar */
+    @media screen {
+      .etiqueta { zoom: 2.2; }
+    }
+
+    .categoria {
+      font-size: 1.6mm;
+      color: #555;
       width: 100%;
+      line-height: 1.1;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
+    /* Nombre completo: hasta 2-3 líneas, sin cortar con "..." (se reduce la letra si hace falta) */
     .nombre {
-      font-size: 7.5px;
+      font-size: 2.8mm;
       font-weight: bold;
       color: #111;
+      width: 100%;
+      line-height: 1.15;
+      height: 7.2mm;
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .precio {
+      font-size: 6.2mm;
+      font-weight: bold;
+      color: #c0392b;
       text-align: center;
       width: 100%;
-      line-height: 1.2;
-      max-height: 18px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      line-height: 1;
     }
 
     svg#barcode {
       width: 100%;
-      height: 48px;
+      height: 7.5mm;
     }
 
-    .bottom-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .pie {
       width: 100%;
+      font-size: 1.9mm;
+      color: #333;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .idprod {
-      font-size: 6px;
-      color: #555;
-    }
-
-    .precio {
-      font-size: 10px;
-      font-weight: bold;
-      color: #c0392b;
-    }
+    .pie b { color: #000; }
 
     /* Controles de impresión — no se imprimen */
     .controles {
@@ -118,6 +122,7 @@
         background: white;
         margin: 0;
         padding: 0;
+        min-height: 0;
         justify-content: flex-start;
       }
 
@@ -126,18 +131,10 @@
       .etiqueta {
         border: none;
         box-shadow: none;
-        /* Tamaño exacto para impresora de etiquetas */
         width: 50mm;
         height: 30mm;
         padding: 1mm 1.5mm;
       }
-
-      .nombre   { font-size: 2.2mm; max-height: 5mm; }
-      .empresa  { font-size: 1.8mm; }
-      .precio   { font-size: 3mm; }
-      .idprod   { font-size: 1.6mm; }
-
-      svg#barcode { height: 14mm; }
 
       @page {
         size: 50mm 30mm;
@@ -149,13 +146,11 @@
 <body>
 
   <div class="etiqueta">
-    <div class="empresa">FERRETERIA EL BARATILLO</div>
+    <div class="categoria" id="categoriaProducto"></div>
     <div class="nombre" id="nombreProducto">Cargando...</div>
+    <div class="precio" id="precioProducto"></div>
     <svg id="barcode"></svg>
-    <div class="bottom-row">
-      <span class="idprod" id="idProducto"></span>
-      <span class="precio" id="precioProducto"></span>
-    </div>
+    <div class="pie">Cód: <span id="codFab"></span> · <b id="codCosto"></b></div>
   </div>
 
   <div class="controles">
@@ -169,28 +164,79 @@
   </div>
 
   <script>
+    // Costo codificado: 21.51 -> C21P51
+    function codigoCosto(cc) {
+      const n = parseFloat(String(cc).replace(',', '.'));
+      if (isNaN(n)) return '';
+      const partes = n.toFixed(2).split('.');
+      return 'C' + partes[0] + 'P' + partes[1];
+    }
+
+    // Reduce la letra del nombre hasta que quepa completo
+    function ajustarNombre() {
+      const el = document.getElementById('nombreProducto');
+      let size = 2.8;               // mm
+      el.style.fontSize = size + 'mm';
+      while (el.scrollHeight > el.clientHeight + 0.5 && size > 1.7) {
+        size -= 0.1;
+        el.style.fontSize = size + 'mm';
+      }
+    }
+
     // Leer parámetros de la URL
     const params  = new URLSearchParams(window.location.search);
-    const id      = params.get('id')     || '000000';
+    const id      = params.get('id')     || '';
     const nombre  = params.get('nombre') || 'Sin nombre';
     const precio  = params.get('precio') || '0.00';
-    const sku     = params.get('sku')    || id;
+    const cat     = params.get('cat')    || '';
+    const fab     = params.get('fab')    || id;
+    const cc      = params.get('cc')     || '';
+    const barras  = params.get('barras') || '';
 
     // Rellenar datos
-    document.getElementById('nombreProducto').textContent = nombre;
-    document.getElementById('idProducto').textContent     = 'Cód: ' + id;
-    document.getElementById('precioProducto').textContent = 'S/ ' + parseFloat(precio).toFixed(2);
+    document.getElementById('categoriaProducto').textContent = cat;
+    document.getElementById('nombreProducto').textContent    = nombre;
+    document.getElementById('precioProducto').textContent    = 'S/ ' + parseFloat(String(precio).replace(',', '.')).toFixed(2);
+    document.getElementById('codFab').textContent            = fab;
+    document.getElementById('codCosto').textContent          = codigoCosto(cc);
 
-    // Generar barcode con el SKU
-    JsBarcode('#barcode', id, {
-      format:      'CODE128',
-      lineColor:   '#000',
-      width:       1.2,
-      height:      40,
-      displayValue: true,
-      fontSize:    7,
-      margin:      2
-    });
+    ajustarNombre();
+    window.addEventListener('beforeprint', ajustarNombre);
+
+    // Código de barras con el valor registrado en AppSheet
+    const svg = document.getElementById('barcode');
+
+    function dibujarBarras(formato) {
+      JsBarcode('#barcode', barras, {
+        format:       formato,
+        lineColor:    '#000',
+        width:        2,
+        height:       28,
+        displayValue: true,
+        fontSize:     11,
+        textMargin:   1,
+        margin:       0
+      });
+    }
+
+    if (barras) {
+      try {
+        // Si son 13 dígitos válidos se imprime como EAN13; si no, CODE128
+        if (/^\d{13}$/.test(barras)) {
+          dibujarBarras('EAN13');
+        } else {
+          dibujarBarras('CODE128');
+        }
+      } catch (e) {
+        dibujarBarras('CODE128');
+      }
+      // Asegura que el SVG se escale al espacio disponible
+      if (!svg.getAttribute('viewBox')) {
+        svg.setAttribute('viewBox', '0 0 ' + svg.getAttribute('width') + ' ' + svg.getAttribute('height'));
+      }
+    } else {
+      svg.style.display = 'none';
+    }
   </script>
 
 </body>
