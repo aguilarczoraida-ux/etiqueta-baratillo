@@ -6,6 +6,18 @@
   <title>Etiqueta Producto</title>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   <style>
+    /* ====== AJUSTES RÁPIDOS (todo en mm) ====== */
+    :root {
+      --ancho: 50mm;          /* ancho de la etiqueta */
+      --alto: 25mm;           /* alto de la etiqueta */
+      --col-barras: 26mm;     /* ancho del código de barras y del código de abajo */
+      --alto-barras: 6mm;     /* alto de las barras */
+      --f-nombre: 3.8mm;      /* letra máxima del nombre (se reduce sola si no cabe) */
+      --f-precio: 7.5mm;      /* letra máxima del precio (se reduce sola si no cabe) */
+      --f-codigo: 4.4mm;      /* letra máxima del código bajo las barras (se reduce sola) */
+      --f-cat: 1.5mm;         /* letra de la categoría */
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
@@ -20,17 +32,14 @@
       padding: 20px;
     }
 
-    /* Etiqueta exacta 50mm x 30mm (todo en mm para que pantalla e impresión sean iguales) */
     .etiqueta {
-      width: 50mm;
-      height: 30mm;
+      width: var(--ancho);
+      height: var(--alto);
       background: white;
       border: 1px solid #ccc;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1mm 1.5mm;
+      padding: 0.8mm 1.5mm;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
       overflow: hidden;
     }
@@ -41,105 +50,88 @@
     }
 
     .categoria {
-      font-size: 1.6mm;
+      font-size: var(--f-cat);
       color: #555;
-      width: 100%;
       line-height: 1.1;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .categoria:empty { display: none; }
 
-    /* Nombre completo: hasta 2-3 líneas, sin cortar con "..." (se reduce la letra si hace falta) */
+    /* Nombre: 2 líneas arriba, ocupando todo el ancho */
     .nombre {
-      font-size: 2.8mm;
+      font-size: var(--f-nombre);
       font-weight: bold;
       color: #111;
-      width: 100%;
-      line-height: 1.15;
-      height: 7.2mm;
+      line-height: 1.1;
+      height: 9.5mm;
       overflow: hidden;
-      text-align: left;
+      flex: none;
     }
 
-    .precio {
-      font-size: 6.2mm;
-      font-weight: bold;
-      color: #c0392b;
-      text-align: center;
-      width: 100%;
-      line-height: 1;
+    /* Zona inferior: barras + código a la izquierda, precio a la derecha */
+    .medio {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: var(--col-barras) 1fr;
+      column-gap: 2mm;
     }
+    .medio.sin-barras { grid-template-columns: 1fr; }
+
+    .zona-barras { align-self: center; }
 
     svg#barcode {
       width: 100%;
-      height: 7.5mm;
+      height: var(--alto-barras);
+      display: block;
     }
 
-    .pie {
+    .codigo {
       width: 100%;
-      font-size: 1.9mm;
-      color: #333;
+      font-size: var(--f-codigo);
+      color: #000;
       line-height: 1.1;
+      text-align: center;
       white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis;
     }
 
-    .pie b { color: #000; }
-
-    /* Controles de impresión — no se imprimen */
-    .controles {
+    .precio-box {
+      align-self: center;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 10px;
+      align-items: flex-end;
+      min-width: 0;
+      line-height: 1;
     }
-
-    .btn-imprimir {
-      background: #2d5016;
-      color: white;
-      border: none;
-      padding: 12px 32px;
-      border-radius: 25px;
-      font-size: 16px;
+    .sol { font-size: 2mm; font-weight: bold; color: #c0392b; }
+    .precio {
+      width: 100%;
+      font-size: var(--f-precio);
       font-weight: bold;
-      cursor: pointer;
+      color: #c0392b;
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
     }
 
+    /* Controles de impresión — no se imprimen */
+    .controles { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .btn-imprimir {
+      background: #2d5016; color: white; border: none;
+      padding: 12px 32px; border-radius: 25px;
+      font-size: 16px; font-weight: bold; cursor: pointer;
+    }
     .btn-imprimir:hover { background: #5a8f2a; }
+    .aviso { font-size: 12px; color: #666; text-align: center; max-width: 280px; }
 
-    .aviso {
-      font-size: 12px;
-      color: #666;
-      text-align: center;
-      max-width: 280px;
-    }
-
-    /* Al imprimir: solo la etiqueta, sin fondo, sin controles */
     @media print {
-      body {
-        background: white;
-        margin: 0;
-        padding: 0;
-        min-height: 0;
-        justify-content: flex-start;
-      }
-
+      body { background: white; margin: 0; padding: 0; min-height: 0; justify-content: flex-start; }
       .controles { display: none; }
-
-      .etiqueta {
-        border: none;
-        box-shadow: none;
-        width: 50mm;
-        height: 30mm;
-        padding: 1mm 1.5mm;
-      }
-
-      @page {
-        size: 50mm 30mm;
-        margin: 0;
-      }
+      .etiqueta { border: none; box-shadow: none; }
+      @page { size: 50mm 25mm; margin: 0; }
     }
   </style>
 </head>
@@ -148,102 +140,99 @@
   <div class="etiqueta">
     <div class="categoria" id="categoriaProducto"></div>
     <div class="nombre" id="nombreProducto">Cargando...</div>
-    <div class="precio" id="precioProducto"></div>
-    <svg id="barcode"></svg>
-    <div class="pie">Cód: <span id="codFab"></span> · <b id="codCosto"></b></div>
+    <div class="medio" id="medio">
+      <div class="zona-barras">
+        <svg id="barcode"></svg>
+        <div class="codigo" id="codigoProducto"></div>
+      </div>
+      <div class="precio-box">
+        <span class="sol">S/</span>
+        <div class="precio" id="precioProducto"></div>
+      </div>
+    </div>
   </div>
 
   <div class="controles">
-    <button class="btn-imprimir" onclick="window.print()">
-      🖨️ Imprimir etiqueta
-    </button>
+    <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir etiqueta</button>
     <p class="aviso">
-      Configura tu impresora con tamaño de papel <strong>50mm × 30mm</strong>
+      Configura tu impresora con tamaño de papel <strong>50mm × 25mm</strong>
       y márgenes en <strong>0</strong> antes de imprimir.
     </p>
   </div>
 
   <script>
-    // Costo codificado: 21.51 -> C21P51
-    function codigoCosto(cc) {
-      let s = String(cc).replace(/[^0-9.,]/g, '');   // quita letras como la "C"
-      if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
-      const n = parseFloat(s);
-      if (isNaN(n)) return '';
-      const partes = n.toFixed(2).split('.');
-      return 'C' + partes[0] + 'P' + partes[1];
+    // Lee una medida en mm desde las variables CSS
+    function varMm(nombre) {
+      return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(nombre));
     }
 
-    // Reduce la letra del nombre hasta que quepa completo
-    function ajustarNombre() {
-      const el = document.getElementById('nombreProducto');
-      let size = 2.8;               // mm
+    // Reduce la letra hasta que el texto quepa
+    function ajustar(el, inicioMm, minMm, seDesborda) {
+      let size = inicioMm;
       el.style.fontSize = size + 'mm';
-      while (el.scrollHeight > el.clientHeight + 0.5 && size > 1.7) {
+      while (seDesborda(el) && size > minMm) {
         size -= 0.1;
         el.style.fontSize = size + 'mm';
       }
     }
 
+    function ajustarTodo() {
+      ajustar(document.getElementById('nombreProducto'), varMm('--f-nombre'), 1.8,
+        el => el.scrollHeight > el.clientHeight + 1);
+      ajustar(document.getElementById('precioProducto'), varMm('--f-precio'), 2.5,
+        el => el.scrollWidth > el.clientWidth + 1);
+      ajustar(document.getElementById('codigoProducto'), varMm('--f-codigo'), 1.8,
+        el => el.scrollWidth > el.clientWidth + 1);
+    }
+
     // Leer parámetros de la URL
     const params  = new URLSearchParams(window.location.search);
-    const id      = params.get('id')     || '';
     const nombre  = params.get('nombre') || 'Sin nombre';
     const precio  = params.get('precio') || '0.00';
     const cat     = params.get('cat')    || '';
-    const fab     = params.get('fab')    || id;
-    const cc      = params.get('cc')     || '';
     const barras  = params.get('barras') || '';
 
-    // Rellenar datos
     document.getElementById('categoriaProducto').textContent = cat;
     document.getElementById('nombreProducto').textContent    = nombre;
-    document.getElementById('precioProducto').textContent    = 'S/ ' + parseFloat(String(precio).replace(',', '.')).toFixed(2);
-    document.getElementById('codFab').textContent            = fab;
-    document.getElementById('codCosto').textContent          = codigoCosto(cc);
-
-    ajustarNombre();
-    window.addEventListener('beforeprint', ajustarNombre);
+    document.getElementById('precioProducto').textContent    = parseFloat(String(precio).replace(',', '.')).toFixed(2);
 
     // Código de barras con el valor registrado en AppSheet
+    // (el texto de abajo lo dibujamos aparte para poder hacerlo grande)
     const svg = document.getElementById('barcode');
 
     function dibujarBarras(formato) {
       JsBarcode('#barcode', barras, {
-        format:       formato,
-        lineColor:    '#000',
-        width:        2,
-        height:       28,
-        displayValue: true,
-        fontSize:     11,
-        textMargin:   1,
-        margin:       0
+        format: formato, lineColor: '#000',
+        width: 2, height: 60,
+        displayValue: false, margin: 0
       });
     }
 
     if (barras) {
       try {
-        // Si son 13 dígitos válidos se imprime como EAN13; si no, CODE128
-        if (/^\d{13}$/.test(barras)) {
-          dibujarBarras('EAN13');
-        } else {
-          dibujarBarras('CODE128');
-        }
+        dibujarBarras(/^\d{13}$/.test(barras) ? 'EAN13' : 'CODE128');
       } catch (e) {
         dibujarBarras('CODE128');
       }
-      // Asegura que el SVG se escale al espacio disponible
       if (!svg.getAttribute('viewBox')) {
         svg.setAttribute('viewBox', '0 0 ' + svg.getAttribute('width') + ' ' + svg.getAttribute('height'));
       }
+      // Estira las barras al ancho y alto definidos (los módulos conservan su proporción horizontal)
+      svg.setAttribute('preserveAspectRatio', 'none');
+      document.getElementById('codigoProducto').textContent = barras;
     } else {
       svg.style.display = 'none';
+      document.querySelector('.zona-barras').style.display = 'none';
+      document.getElementById('medio').classList.add('sin-barras');
     }
+
+    ajustarTodo();
+    window.addEventListener('beforeprint', ajustarTodo);
 
     // Abrir el cuadro de impresión automáticamente (agrega &auto=0 a la URL para desactivarlo)
     if (params.get('auto') !== '0') {
       window.addEventListener('load', function () {
-        ajustarNombre();
+        ajustarTodo();
         setTimeout(function () { window.print(); }, 400);
       });
     }
