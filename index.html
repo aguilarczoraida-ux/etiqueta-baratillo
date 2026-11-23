@@ -16,6 +16,7 @@
       --f-precio: 7.5mm;      /* letra máxima del precio (se reduce sola si no cabe) */
       --f-codigo: 4.4mm;      /* letra máxima del código bajo las barras (se reduce sola) */
       --f-cat: 1.5mm;         /* letra de la categoría */
+      --f-cc: 2.4mm;            /* letra pequeña del CC bajo el precio */
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -117,6 +118,16 @@
       overflow: hidden;
     }
 
+    .cc {
+      font-size: var(--f-cc);
+      color: #333;
+      text-align: right;
+      white-space: nowrap;
+      margin-top: 0.6mm;
+      line-height: 1;
+    }
+    .cc:empty { display: none; }
+
     /* Controles de impresión — no se imprimen */
     .controles { display: flex; flex-direction: column; align-items: center; gap: 10px; }
     .btn-imprimir {
@@ -148,6 +159,7 @@
       <div class="precio-box">
         <span class="sol">S/</span>
         <div class="precio" id="precioProducto"></div>
+        <div class="cc" id="ccProducto"></div>
       </div>
     </div>
   </div>
@@ -191,6 +203,22 @@
     const precio  = params.get('precio') || '0.00';
     const cat     = params.get('cat')    || '';
     const barras  = params.get('barras') || '';
+    const cc      = params.get('cc')     || '';
+
+    // CC: si AppSheet ya manda el código (C36P0000) se muestra tal cual;
+    // si manda un número (36.00) se convierte a C36P00
+    function ccTexto(v) {
+      v = String(v).trim();
+      if (!v) return '';
+      if (/^C\d+P\d+$/i.test(v)) return v.toUpperCase();
+      let n = v.replace(/[^0-9.,]/g, '');
+      if (n.includes(',')) n = n.replace(/\./g, '').replace(',', '.');
+      const num = parseFloat(n);
+      if (isNaN(num)) return v;
+      const partes = num.toFixed(2).split('.');
+      return 'C' + partes[0] + 'P' + partes[1];
+    }
+    document.getElementById('ccProducto').textContent = ccTexto(cc);
 
     document.getElementById('categoriaProducto').textContent = cat;
     document.getElementById('nombreProducto').textContent    = nombre;
